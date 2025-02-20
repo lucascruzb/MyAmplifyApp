@@ -21,16 +21,18 @@
 
 import 'package:amplify_core/amplify_core.dart' as amplify_core;
 import 'Todo.dart';
+import 'Post.dart';
 
+export 'Post.dart';
 export 'Todo.dart';
 
 class ModelProvider implements amplify_core.ModelProviderInterface {
   @override
-  String version = "09200caedfd23819d9d69aa5c7a7459a";
+  String version = "b7ab34d0c32dbfd4865c9ed1c101f2ea";
   @override
   List<amplify_core.ModelSchema> modelSchemas = [Todo.schema];
   @override
-  List<amplify_core.ModelSchema> customTypeSchemas = [];
+  List<amplify_core.ModelSchema> customTypeSchemas = [Post.schema];
   static final ModelProvider _instance = ModelProvider();
 
   static ModelProvider get instance => _instance;

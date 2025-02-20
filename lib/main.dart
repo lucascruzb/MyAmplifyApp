@@ -9,6 +9,16 @@ import 'models/ModelProvider.dart';
 
 Future<void> main() async {
   try {
+    WidgetsFlutterBinding.ensureInitialized();
+    await _configureAmplify();
+    runApp(const MyApp());
+  } on AmplifyException catch (e) {
+    runApp(Text("Error configuring Amplify: ${e.message}"));
+  }
+}
+
+Future<void> _configureAmplify() async {
+  try {
     final api = AmplifyAPI(
         options: APIPluginOptions(modelProvider: ModelProvider.instance));
     await Amplify.addPlugins([api]);
@@ -18,9 +28,7 @@ Future<void> main() async {
   } on Exception catch (e) {
     safePrint('Error configuring Amplify: $e');
   }
-  runApp(const MyApp());
 }
-// ...main()
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -41,8 +49,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<Todo> _todos = [];
-  StreamSubscription<GraphQLResponse<Todo>>? subscription;
+  List<Post> _Posts = [];
+  StreamSubscription<GraphQLResponse<Post>>? subscription;
 
   @override
   void initState() {
@@ -58,16 +66,14 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _subscribe() {
-    final subscriptionRequest = ModelSubscriptions.onCreate(Todo.classType);
-    final Stream<GraphQLResponse<Todo>> operation = Amplify.API.subscribe(
-      subscriptionRequest,
-      onEstablished: () => safePrint('Subscription established'),
+    final operation = Amplify.API.subscribe(
+      ModelSubscriptions.onCreate(Post.schem),
     );
     subscription = operation.listen(
       (event) {
         safePrint('Subscription event data received: ${event.data}');
         setState(() {
-          _todos.add(event.data!);
+          _Posts.add(event.data!);
         });
       },
       onError: (Object e) => safePrint('Error in subscription stream: $e'),
@@ -76,17 +82,17 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _refreshTodos() async {
     try {
-      final request = ModelQueries.list(Todo.classType);
+      final request = ModelQueries.list(Post.schem);
       final response = await Amplify.API.query(request: request).response;
 
-      final todos = response.data?.items;
+      final posts = response.data?.items;
       if (response.hasErrors) {
         safePrint('errors: ${response.errors}');
         return;
       }
       setState(() {
-        safePrint(todos);
-        _todos = todos!.whereType<Todo>().toList();
+        safePrint(posts);
+        _Posts = posts!.whereType<Post>().toList();
       });
     } on ApiException catch (e) {
       safePrint('Query failed: $e');
@@ -108,7 +114,7 @@ class _MyHomePageState extends State<MyHomePage> {
             const Text(
               'Your todos',
             ),
-            _todos.isEmpty == true
+            _Posts.isEmpty == true
                 ? const Center(
                     child: Text(
                       "The list is empty.\nAdd some items by clicking the floating action button.",
@@ -118,9 +124,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 : ListView.builder(
                     scrollDirection: Axis.vertical,
                     shrinkWrap: true,
-                    itemCount: _todos.length,
+                    itemCount: _Posts.length,
                     itemBuilder: (context, index) {
-                      final todo = _todos[index];
+                      final todo = _Posts[index];
                       return CheckboxListTile.adaptive(
                         value: todo.isDone,
                         title: Text(todo.content!),
